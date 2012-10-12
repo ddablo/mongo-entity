@@ -6,6 +6,10 @@ Mongo entity framework.
 Usage
 =====
 
+**install**:
+
+    npm install mongo-entity
+
 **configure**:
 
 in express app configuration add `addLocals` middleware and decorate middleware:
