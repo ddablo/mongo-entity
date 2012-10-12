@@ -1,3 +1,5 @@
+var helpers = require('helpers');
+
 /**
  * Created with JetBrains WebStorm.
  * User: Daniboy
