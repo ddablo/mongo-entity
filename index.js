@@ -1,4 +1,6 @@
 var helpers = require('./helpers');
+const FAIL_RESULT = 'FAILURE';
+const SUCCESS_RESULT = 'SUCCESS';
 
 /**
  * Created with JetBrains WebStorm.
