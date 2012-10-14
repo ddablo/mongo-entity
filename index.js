@@ -10,12 +10,12 @@ const SUCCESS_RESULT = 'SUCCESS';
  * To change this template use File | Settings | File Templates.
  */
 
-function beforeCallback(err, result, callback) {
+function beforeCallback(err, opts, result, callback) {
 
     if (!result) return callback(err);
 
     //make any result be array even if there is only one object.
-    if (!result.length) {
+    if (!result.hasOwnProperty('length')) {
         result = [result];
     }
 
@@ -94,7 +94,7 @@ Entity.prototype.createEntities = function (req, res, opts, callback) {
         return;
 
     req.mongoRef.collection(this.collectionName).insert(opts.query, opts.options, function (err, rows) {
-        beforeCallback(err, rows, callback);
+        beforeCallback(err, opts, rows, callback);
     });
 }
 
@@ -112,7 +112,7 @@ Entity.prototype.findEntities = function (req, res, opts, callback) {
         return;
 
     req.mongoRef.collection(this.collectionName).findItems(opts.query, opts.options, function (err, rows) {
-        beforeCallback(err, rows, callback);
+        beforeCallback(err, opts, rows, callback);
     });
 }
 
@@ -179,7 +179,7 @@ Entity.prototype.updateEntity = function (req, res, opts, callback) {
         return;
 
     req.mongoRef.collection(this.collectionName).findAndModify(opts.query, opts.sort, opts.update, opts.options, function (err, rows) {
-        beforeCallback(err, rows, callback);
+        beforeCallback(err, opts, rows, callback);
     });
 }
 
