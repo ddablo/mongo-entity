@@ -171,13 +171,6 @@ Entity.prototype.countEntities = function (req, res, opts, callback) {
 Entity.prototype.updateEntity = function (req, res, opts, callback) {
     if ('function' === typeof opts) callback = opts, opts = undefined;
 
-    if (!opts.options) {
-        opts.options = {new:true };
-    }
-    else {
-        opts.options.new = true;
-    }
-
     if (!opts.sort) {
         opts.sort = [];
     }
