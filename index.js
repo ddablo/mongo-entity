@@ -71,22 +71,6 @@ function Entity(collectionName) {
 
         return true;
     };
-
-    this.addLocals = function (req, res, next) {
-        res.locals.errors = {};
-        req.errorHelper = helpers.errorHelper;
-        req.validateHelper = helpers.validateHelper;
-
-        res.jsonWithOptions = function (err, result) {
-            if (err) {
-                return res.send(500, {error:helpers.errorHelper.getUserMessage(err), result: FAIL_RESULT});
-            }
-
-            res.json({ result: SUCCESS_RESULT, data: result });
-        }
-
-        next();
-    };
 }
 
 /**
@@ -240,3 +224,18 @@ Entity.prototype.removeEntity = function (req, res, opts, callback) {
 }
 
 exports.Entity = Entity;
+exports.addLocals = function (req, res, next) {
+    res.locals.errors = {};
+    req.errorHelper = helpers.errorHelper;
+    req.validateHelper = helpers.validateHelper;
+
+    res.jsonWithOptions = function (err, result) {
+        if (err) {
+            return res.send(500, {error:helpers.errorHelper.getUserMessage(err), result: FAIL_RESULT});
+        }
+
+        res.json({ result: SUCCESS_RESULT, data: result });
+    }
+
+    next();
+};
