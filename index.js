@@ -9,6 +9,9 @@ const SUCCESS_RESULT = 'SUCCESS';
  * Time: 9:11 AM
  * To change this template use File | Settings | File Templates.
  */
+var settings = {
+    error_http_reponse: 500
+};
 
 function beforeCallback(err, opts, result, callback) {
 
@@ -222,9 +225,10 @@ exports.addLocals = function (req, res, next) {
     req.errorHelper = helpers.errorHelper;
     req.validateHelper = helpers.validateHelper;
 
-    res.jsonWithOptions = function (err, result) {
+
+    res.jsonWithOptions = function (err, result, error_http_response_override) {
         if (err) {
-            return res.send(500, {error:helpers.errorHelper.getUserMessage(err), result: FAIL_RESULT});
+            return res.send(error_http_response_override ? error_http_response_override : settings.error_http_reponse, {error:helpers.errorHelper.getUserMessage(err), result: FAIL_RESULT});
         }
 
         res.json({ result: SUCCESS_RESULT, data: result });
@@ -232,3 +236,8 @@ exports.addLocals = function (req, res, next) {
 
     next();
 };
+exports.registerError = helpers.errorHelper.registerError;
+
+exports.set = function(setting, value){
+    settings[setting] = value;
+}
