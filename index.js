@@ -10,7 +10,7 @@ const SUCCESS_RESULT = 'SUCCESS';
  * To change this template use File | Settings | File Templates.
  */
 var settings = {
-    error_http_reponse: 500
+    error_http_reponse:500
 };
 
 function beforeCallback(err, opts, result, callback) {
@@ -39,10 +39,14 @@ function beforeCallback(err, opts, result, callback) {
     callback(err, result);
 }
 
+function invoke_error(err, cb, err_h) {
+    err_h ? err_h(err) : cb(err);
+}
+
 function Entity(collectionName) {
     this.collectionName = collectionName;
 
-    this.preapareOperation = function (req, res, opts, callback) {
+    this.preapareOperation = function (req, res, opts, callback, error_handler) {
         if (!opts) //nothing to do...
             return true;
 
@@ -64,7 +68,7 @@ function Entity(collectionName) {
         }
 
         if (opts.requiredFields && !req.validateHelper.validateObject(req, opts.query, validateResult, opts.requiredFields)) {
-            callback(validateResult.err);
+            invoke_error(validateResult.err, callback, error_handler);
             return false;
         }
 
@@ -83,7 +87,7 @@ function Entity(collectionName) {
  * @param {Object} [opts] options - a custom 'query', a custom 'options' and 'requiredFields'
  * @param {Function} [callback] callback function
  */
-Entity.prototype.createEntities = function (req, res, opts, callback) {
+Entity.prototype.createEntities = function (req, res, opts, callback, error_handler) {
     if ('function' === typeof opts) callback = opts, opts = undefined;
 
     if (!opts.options) {
@@ -97,6 +101,7 @@ Entity.prototype.createEntities = function (req, res, opts, callback) {
         return;
 
     req.mongoRef.collection(this.collectionName).insert(opts.query, opts.options, function (err, rows) {
+        if (err) return invoke_error(err, callback, error_handler);
         beforeCallback(err, opts, rows, callback);
     });
 }
@@ -108,13 +113,14 @@ Entity.prototype.createEntities = function (req, res, opts, callback) {
  * @param {Object} [opts] opts options - a custom 'query', a custom 'options' and 'requiredFields'
  * @param {Function} [callback]
  */
-Entity.prototype.findEntities = function (req, res, opts, callback) {
+Entity.prototype.findEntities = function (req, res, opts, callback, error_handler) {
     if ('function' === typeof opts) callback = opts, opts = undefined;
 
     if (!this.preapareOperation(req, res, opts, callback))
         return;
 
     req.mongoRef.collection(this.collectionName).findItems(opts.query, opts.options, function (err, rows) {
+        if (err) return invoke_error(err, callback, error_handler);
         beforeCallback(err, opts, rows, callback);
     });
 }
@@ -126,7 +132,7 @@ Entity.prototype.findEntities = function (req, res, opts, callback) {
  * @param {Object} [opts] opts options - a custom 'query', a custom 'options' and 'requiredFields'
  * @param {Function} [callback]
  */
-Entity.prototype.getObjIdOfEntity = function (req, res, opts, callback) {
+Entity.prototype.getObjIdOfEntity = function (req, res, opts, callback, error_handler) {
     if ('function' === typeof opts) callback = opts, opts = undefined;
 
     opts.options = {_id:1};
@@ -135,9 +141,8 @@ Entity.prototype.getObjIdOfEntity = function (req, res, opts, callback) {
         return;
 
     req.mongoRef.collection(this.collectionName).findOne(opts.query, opts.options, function (err, entity) {
-        if (err) return callback(err);
-
-        if (!entity) return callback(req.errorHelper.entityNotFound);
+        if (err) return invoke_error(err, callback, error_handler);
+        if (!entity) return invoke_error(req.errorHelper.entityNotFound, callback, error_handler);
 
         callback(undefined, entity._id);
     });
@@ -150,13 +155,16 @@ Entity.prototype.getObjIdOfEntity = function (req, res, opts, callback) {
  * @param {Object} [opts] opts options - a custom 'query', a custom 'options' and 'requiredFields'
  * @param {Function} [callback]
  */
-Entity.prototype.countEntities = function (req, res, opts, callback) {
+Entity.prototype.countEntities = function (req, res, opts, callback, error_handler) {
     if ('function' === typeof opts) callback = opts, opts = undefined;
 
     if (!this.preapareOperation(req, res, opts, callback))
         return;
 
-    req.mongoRef.collection(this.collectionName).count(opts.query, callback);
+    req.mongoRef.collection(this.collectionName).count(opts.query, function (err, count) {
+        if (err) return invoke_error(err, callback, error_handler);
+        callback(undefined, count);
+    });
 }
 
 /**
@@ -171,7 +179,7 @@ Entity.prototype.countEntities = function (req, res, opts, callback) {
  * new    : set to true if you want to return the modified object rather than the original. Ignored for remove.
  * upsert : true/false (perform upsert operation)
  **/
-Entity.prototype.updateEntity = function (req, res, opts, callback) {
+Entity.prototype.updateEntity = function (req, res, opts, callback, error_handler) {
     if ('function' === typeof opts) callback = opts, opts = undefined;
 
     if (!opts.sort) {
@@ -182,6 +190,7 @@ Entity.prototype.updateEntity = function (req, res, opts, callback) {
         return;
 
     req.mongoRef.collection(this.collectionName).findAndModify(opts.query, opts.sort, opts.update, opts.options, function (err, rows) {
+        if (err) return invoke_error(err, callback, error_handler);
         beforeCallback(err, opts, rows, callback);
     });
 }
@@ -194,7 +203,7 @@ Entity.prototype.updateEntity = function (req, res, opts, callback) {
  * @param {Function} [callback] callback function
  *
  **/
-Entity.prototype.removeEntity = function (req, res, opts, callback) {
+Entity.prototype.removeEntity = function (req, res, opts, callback, error_handler) {
 
     //TODO: look at $atomic
 
@@ -211,10 +220,8 @@ Entity.prototype.removeEntity = function (req, res, opts, callback) {
         return;
 
     req.mongoRef.collection(this.collectionName).remove(opts.query, opts.options, function (err, success) {
-        if (err) return callback(err);
-
-        if (!success) return callback(req.errorHelper.entityNotFound);
-
+        if (err) return invoke_error(err, callback, error_handler);
+        if (!success) return invoke_error(req.errorHelper.entityNotFound, callback, error_handler);
         callback(undefined, []);
     });
 }
@@ -228,16 +235,17 @@ exports.addLocals = function (req, res, next) {
 
     res.jsonWithOptions = function (err, result, error_http_response_override) {
         if (err) {
-            return res.send(error_http_response_override ? error_http_response_override : settings.error_http_reponse, {error:helpers.errorHelper.getUserMessage(err), result: FAIL_RESULT});
+            return res.send(error_http_response_override ? error_http_response_override : settings.error_http_reponse, {error:helpers.errorHelper.getUserMessage(err), result:FAIL_RESULT});
         }
 
-        res.json({ result: SUCCESS_RESULT, data: result });
+        res.json({ result:SUCCESS_RESULT, data:result });
     }
 
     next();
 };
 exports.registerError = helpers.errorHelper.registerError;
+exports.invokeError = invoke_error;
 
-exports.set = function(setting, value){
+exports.set = function (setting, value) {
     settings[setting] = value;
 }
