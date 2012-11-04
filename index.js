@@ -62,7 +62,7 @@ function Entity(collectionName) {
 
         for (qfield in opts.query) {
             //TODO: make recursive
-            if (opts.query[qfield].$id) {
+            if (opts.query[qfield] && opts.query[qfield].$id) {
                 opts.query[qfield] = req.mongoRef.ObjectID.createFromHexString(opts.query[qfield].$id);
             }
         }
