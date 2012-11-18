@@ -57,13 +57,14 @@ function Entity(collectionName) {
             var id = opts.query.$id;
             delete opts.query.$id;
 
-            opts.query._id = req.mongoRef.ObjectID.createFromHexString(id);
+            opts.query._id = 'string' === typeof id ? req.mongoRef.ObjectID.createFromHexString(id) : id;
         }
 
         for (qfield in opts.query) {
             //TODO: make recursive
             if (opts.query[qfield] && opts.query[qfield].$id) {
-                opts.query[qfield] = req.mongoRef.ObjectID.createFromHexString(opts.query[qfield].$id);
+                var object_id = opts.query[qfield].$id;
+                opts.query[qfield] = 'string' === typeof object_id ? req.mongoRef.ObjectID.createFromHexString(object_id) : object_id;
             }
         }
 
